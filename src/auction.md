@@ -15,9 +15,25 @@ pool**, not a winner:
    resolved against `CategoryBidderEntity` actors — the registry of which
    campaigns bid on which categories. A CPM threshold keeps only competitive
    bids, and each category contributes at most its top ~50 campaigns by CPM.
-2. **Bid collection.** Each eligible campaign's entity is asked for its
-   creatives and current bid. Campaigns apply their own filters here — a
-   site allowlist, if the advertiser restricted where they appear.
+2. **Bid collection — from a standing book, not a race.** Each category's
+   bidder keeps a *standing bid book*: every registered campaign pushes its
+   current bid material (bid, creatives, site allowlist, schedule status)
+   to the book whenever it changes, on a once-a-minute heartbeat, and
+   whenever a freshly started bidder asks for a warm-up. Auctions are
+   answered synchronously from the book — no waiting on anyone.
+
+   This replaced an earlier design in which every auction *asked* every
+   campaign live, under a deadline. That version had a failure mode worth
+   recording, because it produced three outages in three days that looked
+   identical from the outside — ads gone, every dashboard green: if any
+   link in the ask chain was slow (a busy actor, a starved node, a shard
+   mid-move), the campaign's reply missed the window and it simply ceased
+   to exist for that auction. Slowness didn't degrade a campaign; it
+   *erased* it, silently, per auction. With the book, slowness costs
+   freshness instead: an auction may briefly read a minute-old bid, a
+   campaign whose quotes go stale is flagged loudly, and one that stops
+   quoting for ten minutes is treated — honestly — as departed demand.
+   A marketplace's candidacy should be state, not a footrace.
 3. **Ordering, no cap.** Candidates are deduplicated by creative, sorted by
    CPM (publisher-approved creatives win ties), and reordered so each
    campaign's best creative comes first. **The full pool from the eligible
