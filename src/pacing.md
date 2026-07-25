@@ -9,8 +9,9 @@ feedback loop, self-tuned by observation.
 ## The gate
 
 Pacing acts at serve time as a probabilistic gate ahead of selection: each
-request, each campaign is throttled with some probability; a throttled
-campaign sits the impression out. The probability comes from a **PI
+request is passed or throttled as a whole, with a probability computed over
+the page's aggregate demand — a throttled request sits the impression out
+for every candidate at once. The probability comes from a **PI
 controller** — the thermostat's algorithm: correct in proportion to
 today's error and to its accumulated history — watching the spend ratio:
 
@@ -43,6 +44,30 @@ place:
   on the basis of no evidence at all.
 - **Cross-day learning.** A campaign that exhausted its budget early today
   starts tomorrow with a boosted multiplier hint.
+
+## Pacing gates the impression; reservation gates the money
+
+The two budget controls live in different places, and the boundary between
+them is a rule worth stating outright. The pacing gate decides *whether this
+impression should be spent* — one probabilistic decision per request, over
+the site's aggregate spend. The **budget reservation** decides *whether this
+campaign can pay* — an atomic check against the campaign's live budget,
+made for the selected winner before the response is sent; if it fails, the
+next candidate takes the slot.
+
+What sits between them is bookkeeping: per-campaign spend snapshots, cached
+at the serving entity and refreshed on demand, that feed the controller's
+spend ratio. The rule is that this bookkeeping may inform **probabilities,
+never eligibility**. A campaign whose snapshot is missing or stale competes
+anyway — the reservation is the enforcement point, and it consults the
+authoritative budget, not a cache. A cache entry can be an hour old or
+absent entirely and cost the controller nothing but a little precision.
+
+The rule earns its sentence because its violation is quiet and
+self-reinforcing: any serve path that skips candidates for lacking cached
+bookkeeping creates a loop where only campaigns that serve stay bookkept,
+and only bookkept campaigns may serve — the pool then narrows one page at a
+time while every dashboard stays green. Caches inform; they never veto.
 
 ## Expected spend follows the traffic, not the clock
 
