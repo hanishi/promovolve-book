@@ -76,3 +76,30 @@ never accumulate rounding drift); settlement splits gross into platform margin (
 points — hundredths of a percent — that can change on a dated schedule) and
 publisher earnings, one idempotent row
 per advertiser–campaign–site–day.
+
+## One currency in the books, any currency on screen
+
+Everything above — bids, floors, clearing prices, the ledger — is
+denominated in US dollars, and stays that way. Currency is one more place
+where a system can quietly lie to itself: convert at write time and your
+books inherit every exchange-rate wobble; convert per transaction and you
+manufacture a second ledger with a precision the first one never had.
+Promovolve does neither. The books know exactly one currency.
+
+What *does* convert is the screen. Each user can pick a display currency
+in their preferences, and read-only amounts — spend, budgets shown as
+figures, earnings, wallet balances — render converted at a single daily
+reference rate, uniformly, every converted figure marked with `≈` and
+every page that converts carrying the rate and its date. Yesterday's
+earnings will read slightly differently tomorrow; that is honest, because
+the converted number was never a fact — it is what the dollar fact is
+worth today.
+
+Three things never convert, deliberately: input fields (a budget is
+*entered* in dollars, with the converted figure shown beside it — nobody
+should type ¥15,000 into a dollar box), auction pricing detail (floors
+and CPMs are the marketplace's own arithmetic), and the operator's pages
+(whoever runs the books reads the books). When a publisher is eventually
+paid in their own currency, that conversion happens at the bank at payout
+time and is recorded as what it actually was — a banking fact, not a
+display estimate.
